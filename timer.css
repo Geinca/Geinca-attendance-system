@@ -1,0 +1,124 @@
+/* timer.css */
+
+body {
+  background: linear-gradient(135deg, #2c3e50, #4ca1af);
+  color: #ecf0f1;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
+
+h2, h3 {
+  text-align: center;
+  font-weight: 700;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+h2 {
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+}
+
+h3 {
+  margin-top: 50px;
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+/* Container tweaks */
+.container {
+  max-width: 900px;
+  padding: 30px;
+  background-color: rgba(44, 62, 80, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+
+/* Button overrides to fit theme */
+.btn-success {
+  background-color: #27ae60;
+  border: none;
+  box-shadow: 0 4px 10px #27ae60aa;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+.btn-success:hover {
+  background-color: #1e8449;
+}
+
+.btn-warning {
+  background-color: #f39c12;
+  border: none;
+  box-shadow: 0 4px 10px #f39c12aa;
+  font-weight: 600;
+}
+.btn-warning:hover {
+  background-color: #d68910;
+}
+
+.btn-info {
+  background-color: #2980b9;
+  border: none;
+  box-shadow: 0 4px 10px #2980b9aa;
+  font-weight: 600;
+}
+.btn-info:hover {
+  background-color: #21618c;
+}
+
+.btn-danger {
+  background-color: #c0392b;
+  border: none;
+  box-shadow: 0 4px 10px #c0392baa;
+  font-weight: 600;
+}
+.btn-danger:hover {
+  background-color: #922b21;
+}
+
+.btn-primary, .btn-secondary {
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Table styling */
+table.table {
+  background-color: #34495e;
+  color: #ecf0f1;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+}
+
+table.table thead th {
+  background-color: #1abc9c;
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+table.table tbody td {
+  text-align: center;
+  vertical-align: middle;
+  border-top: 1px solid #2c3e50;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.8rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
+  .container {
+    padding: 20px;
+  }
+  table.table tbody td, table.table thead th {
+    font-size: 0.85rem;
+  }
+  button.btn {
+    font-size: 0.9rem;
+    padding: 8px 14px;
+  }
+}

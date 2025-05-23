@@ -111,9 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 
 <body class="from-gray-900 via-purple-900 to-violet-800 min-h-screen flex items-center justify-center p-4">
-    <div class="card w-full max-w-md p-8 shadow-xl">
+    <div class="card w-full max-w-xs sm:max-w-sm md:max-w-md p-6 sm:p-8 shadow-xl">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p class="text-gray-300">Manage your work attendance</p>
         </div>
 
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="hidden" name="action" value="login">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">Username</label>
-                    <input type="text" name="username_login" class="input-field w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500" required>
+                    <input type="text" name="username_login" class="input-field sm:text-base w-full px-4 py-3 bg-gray-800 border border-gray-700 sm:px-4 py-2 sm:py-3 rounded-lg text-white focus:outline-none focus:border-blue-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">Password</label>

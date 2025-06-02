@@ -1,0 +1,18 @@
+:root {
+    --primary: #019FE2;
+    --secondary: #3f37c9;
+    --success: #4cc9f0;
+    --danger: purple;
+    --warning: #f8961e;
+    --info: #4895ef;
+    --light: #f8f9fa;
+    --lightblue: #019FE2;
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+}
+
+body {
+    background-color: #f5f7fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}

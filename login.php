@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->fetch();
             if (password_verify($password, $hashed_password)) {
                 $_SESSION['employee_id'] = $id;
-                header("Location: timer.php");
+                header("Location: dashboard.php");
                 exit;
             } else {
                 $login_error = "Invalid username or password";
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->bind_param("ss", $username, $hashed_password);
                 if ($stmt->execute()) {
                     $_SESSION['employee_id'] = $conn->insert_id;
-                    header("Location: timer.php");
+                    header("Location: dashboard.php");
                     exit;
                 } else {
                     $register_error = "Registration failed. Try again.";

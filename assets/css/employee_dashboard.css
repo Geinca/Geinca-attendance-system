@@ -1,0 +1,128 @@
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(1, 158, 226, 0.14);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.time-display {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--dark);
+    background: rgba(67, 97, 238, 0.1);
+    padding: 8px 15px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.btn-custom {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-start {
+    background-color: var(--success);
+    color: white;
+}
+
+.btn-start:hover {
+    background: white;
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+.btn-stop {
+    background-color: var(--danger);
+    color: white;
+    border: 1px solid var(--danger);
+}
+
+.btn-stop:hover {
+    background: white;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.btn-break {
+    background-color: var(--warning);
+    color: white;
+    border: 1px solid var(--warning);
+}
+
+.btn-break:hover {
+    background: white;
+    border: 1px solid var(--warning);
+    color: var(--warning);
+}
+
+.btn-end-break {
+    background-color: var(--info);
+    border: 1px solid var(--info);
+    color: white;
+}
+
+.btn-end-break:hover {
+    background: white;
+    border: 1px solid var(--info);
+    color: var(--info);
+}
+
+.btn-logout {
+    background-color: var(--lightblue);
+    color: white;
+}
+
+.btn-logout:hover {
+    background: white;
+    border: 1px solid var(--lightblue);
+    color: var(--lightblue);
+}
+
+.table-custom {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.table-custom thead {
+    background-color: var(--primary);
+    color: white;
+}
+
+.table-custom th {
+    border: none;
+    padding: 15px;
+}
+
+.table-custom td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-active {
+    background-color: rgba(76, 201, 240, 0.2);
+    color: var(--success);
+}
+
+.badge-break {
+    background-color: rgba(248, 150, 30, 0.2);
+    color: var(--warning);
+}
+
+.badge-inactive {
+    background-color: rgba(247, 37, 133, 0.2);
+    color: var(--danger);
+}

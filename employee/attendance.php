@@ -1,14 +1,11 @@
 <?php
+date_default_timezone_set('Asia/Kolkata');
 session_start();
 if (!isset($_SESSION['employee_id'])) {
     header("Location: login.php");
     exit;
 }
-date_default_timezone_set('Asia/Kolkata');
-if (!isset($_SESSION['employee_id'])) {
-    header("Location: login.php");
-    exit;
-}
+
 $conn = new mysqli("localhost", "root", "", "attendance_system");
 $employee_id = $_SESSION['employee_id'];
 
@@ -103,126 +100,12 @@ $avg_hours_per_day = $present_days > 0 ? $total_hours / $present_days : 0;
     <title>Attendance Records</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome@6.4.0/css/all.min.css">
+    <!-- sidebar css -->
+     <link rel="stylesheet" href="../assets/css/style.css">
+    <!-- sidebar css -->
+     <link rel="stylesheet" href="../assets/css/sidebar.css">
+    
     <style>
-        :root {
-            --primary: #019FE2;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: purple;
-            --warning: #f8961e;
-            --info: #4895ef;
-            --light: #f8f9fa;
-            --lightblue: #019FE2;
-            --sidebar-width: 280px;
-            --sidebar-collapsed-width: 80px;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden;
-        }
-        
-        /* Sidebar Styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            min-height: 100vh;
-            background: linear-gradient(180deg, var(--primary) 0%, #0066cc 100%);
-            color: white;
-            position: fixed;
-            top: 0;
-            left: 0;
-            transition: all 0.3s ease;
-            z-index: 1000;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .sidebar-collapsed {
-            width: var(--sidebar-collapsed-width);
-        }
-        
-        .sidebar-collapsed .sidebar-header h3,
-        .sidebar-collapsed .nav-link span {
-            display: none;
-        }
-        
-        .sidebar-collapsed .nav-link {
-            justify-content: center;
-        }
-        
-        .sidebar-collapsed .nav-link i {
-            margin-right: 0;
-            font-size: 1.2rem;
-        }
-        
-        .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .sidebar-header h3 {
-            margin-bottom: 0;
-            font-weight: 600;
-        }
-        
-        .sidebar-header img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 10px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 15px 20px;
-            margin: 5px 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-decoration: none;
-        }
-        
-        .nav-link i {
-            margin-right: 10px;
-            font-size: 1.1rem;
-        }
-        
-        .main-content {
-            margin-left: var(--sidebar-width);
-            transition: all 0.3s ease;
-            padding: 20px;
-        }
-        
-        .main-content-expanded {
-            margin-left: var(--sidebar-collapsed-width);
-        }
-        
-        .toggle-sidebar {
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 1001;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
         
         /* Dashboard Styles */
         .dashboard-card {
@@ -231,11 +114,6 @@ $avg_hours_per_day = $present_days > 0 ? $total_hours / $present_days : 0;
             box-shadow: 0 4px 20px rgba(1, 158, 226, 0.14);
             border: none;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         
         .summary-card {
@@ -333,65 +211,11 @@ $avg_hours_per_day = $present_days > 0 ? $total_hours / $present_days : 0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
         
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar-active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .toggle-sidebar {
-                display: flex;
-            }
-        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($employee_name); ?>&background=random" alt="Profile">
-            <h3><?php echo htmlspecialchars($employee_name); ?></h3>
-        </div>
-        <nav class="mt-3">
-            <a href="timer.php" class="nav-link">
-                <i class="fas fa-clock"></i>
-                <span>Time Tracker</span>
-            </a>
-            <a href="attendance.php" class="nav-link active">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Attendance</span>
-            </a>
-            <a href="#" class="nav-link">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
-            <a href="#" class="nav-link">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports</span>
-            </a>
-            <a href="#" class="nav-link">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            <div class="mt-4 pt-3 border-top border-light mx-3"></div>
-            <a href="logout.php" class="nav-link">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </nav>
-    </div>
-
-    <!-- Toggle Sidebar Button (visible on mobile) -->
-    <button class="toggle-sidebar d-lg-none" id="toggleSidebar">
-        <i class="fas fa-bars"></i>
-    </button>
+    <?php include('../sidebar.php') ?>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">

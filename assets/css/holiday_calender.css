@@ -1,0 +1,126 @@
+.main-content {
+    padding: 20px;
+}
+
+.calendar-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-title {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.calendar-table {
+    width: 100%;
+}
+
+.calendar-table th {
+    text-align: center;
+    padding: 10px;
+    background-color: var(--primary);
+    color: white;
+}
+
+.calendar-table td {
+    height: 100px;
+    vertical-align: top;
+    padding: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.calendar-day {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.holiday-cell {
+    background-color: rgba(76, 201, 240, 0.1);
+    position: relative;
+}
+
+.holiday-name {
+    font-size: 0.8rem;
+    color: var(--primary);
+    background-color: rgba(76, 201, 240, 0.2);
+    padding: 2px 5px;
+    border-radius: 4px;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.holiday-type {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.type-national {
+    background-color: rgba(247, 37, 133, 0.2);
+    color: var(--danger);
+}
+
+.type-company {
+    background-color: rgba(248, 150, 30, 0.2);
+    color: var(--warning);
+}
+
+.type-religious {
+    background-color: rgba(72, 149, 239, 0.2);
+    color: var(--info);
+}
+
+.today {
+    background-color: rgba(1, 159, 226, 0.2);
+    border: 2px solid var(--primary);
+}
+
+.other-month {
+    background-color: #f8f9fa;
+    color: #adb5bd;
+}
+
+.holiday-list {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+}
+
+.holiday-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.holiday-item:last-child {
+    border-bottom: none;
+}
+
+.holiday-date {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.badge-holiday {
+    background-color: rgba(76, 201, 240, 0.2);
+    color: var(--primary);
+}

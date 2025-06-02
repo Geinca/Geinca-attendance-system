@@ -10,7 +10,7 @@ $employee_id = $_SESSION['employee_id'];
 $today = date('Y-m-d');
 
 function redirect() {
-    header("Location: timer.php");
+    header("Location: dashboard.php");
     exit;
 }
 

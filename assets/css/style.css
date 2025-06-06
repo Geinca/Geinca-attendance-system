@@ -1,18 +1,26 @@
 :root {
-    --primary: #019FE2;
     --secondary: #3f37c9;
-    --success: #4cc9f0;
-    --danger: purple;
-    --warning: #f8961e;
-    --info: #4895ef;
     --light: #f8f9fa;
-    --lightblue: #019FE2;
     --sidebar-width: 280px;
     --sidebar-collapsed-width: 80px;
+    --primary: #007bff;
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --lightblue: #6c63ff;
+    --dark: #343a40;
 }
 
 body {
     background-color: #f5f7fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow-x: hidden;
+}
+
+#live-clock {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #6c757d;
+    letter-spacing: 0.5px;
+    margin-left: 50px;
 }

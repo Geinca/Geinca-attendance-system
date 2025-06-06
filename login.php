@@ -11,16 +11,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username_login'];
         $password = $_POST['password_login'];
 
-        $stmt = $conn->prepare("SELECT id, password FROM employees WHERE username = ?");
+        $stmt = $conn->prepare("SELECT id, password, role FROM employees WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows == 1) {
-            $stmt->bind_result($id, $hashed_password);
+            $stmt->bind_result($id, $hashed_password, $role);
             $stmt->fetch();
             if (password_verify($password, $hashed_password)) {
                 $_SESSION['employee_id'] = $id;
-                header("Location: dashboard.php");
+                $_SESSION['role'] = $role;
+
+                if ($role === 'admin') {
+                    header("Location: admin_dashboard.php");
+                } else {
+                    header("Location: dashboard.php");
+                }
                 exit;
             } else {
                 $login_error = "Invalid username or password";
@@ -29,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $login_error = "Invalid username or password";
         }
     } elseif (isset($_POST['action']) && $_POST['action'] == 'register') {
-        // Handle register
+        // Handle registration
         $username = trim($_POST['username_register']);
         $password = $_POST['password_register'];
         $confirm_password = $_POST['confirm_password_register'];
@@ -37,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($password !== $confirm_password) {
             $register_error = "Passwords do not match.";
         } else {
-            // Check if username exists
             $stmt = $conn->prepare("SELECT id FROM employees WHERE username = ?");
             $stmt->bind_param("s", $username);
             $stmt->execute();
@@ -47,10 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $register_error = "Username already taken.";
             } else {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO employees (username, password) VALUES (?, ?)");
-                $stmt->bind_param("ss", $username, $hashed_password);
+                $role = 'employee'; // default role for new users
+
+                $stmt = $conn->prepare("INSERT INTO employees (username, password, role) VALUES (?, ?, ?)");
+                $stmt->bind_param("sss", $username, $hashed_password, $role);
                 if ($stmt->execute()) {
                     $_SESSION['employee_id'] = $conn->insert_id;
+                    $_SESSION['role'] = $role;
                     header("Location: dashboard.php");
                     exit;
                 } else {

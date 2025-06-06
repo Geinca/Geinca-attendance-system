@@ -1,7 +1,7 @@
 <?php
-// Set default timezone to Indian Standard Time
 date_default_timezone_set('Asia/Kolkata');
 session_start();
+
 
 if (!isset($_SESSION['employee_id'])) {
     header("Location: login.php");
@@ -10,15 +10,34 @@ if (!isset($_SESSION['employee_id'])) {
 
 $conn = new mysqli("localhost", "root", "", "attendance_system");
 $employee_id = $_SESSION['employee_id'];
-$today = date('Y-m-d');
 
-// Fetch employee name for sidebar
-$stmt_name = $conn->prepare("SELECT username FROM employees WHERE id = ?");
-$stmt_name->bind_param("i", $employee_id);
-$stmt_name->execute();
-$result_name = $stmt_name->get_result();
-$employee = $result_name->fetch_assoc();
-$employee_name = $employee['username'] ?? 'Employee'; // Changed from 'name' to 'username'
+// Get role for logged in user
+$stmt = $conn->prepare("SELECT username, role FROM employees WHERE id = ?");
+$stmt->bind_param("i", $employee_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+if (!$user) {
+    session_destroy();
+    header("Location: login.php");
+    exit;
+}
+
+$username = $user['username'];
+$role = $user['role'];
+$department = $user['department'] ?? '';
+
+
+$all_employees = [];
+if ($role === 'admin') {
+    $stmt_all_emp = $conn->prepare("SELECT id, username, department, role FROM employees ORDER BY username ASC");
+    $stmt_all_emp->execute();
+    $result_all_emp = $stmt_all_emp->get_result();
+    $all_employees = $result_all_emp->fetch_all(MYSQLI_ASSOC);
+}
+
+$today = date('Y-m-d');
 
 // Fetch today's attendance record for employee
 $stmt = $conn->prepare("SELECT id, start_time, break_start_time, break_end_time, stop_time FROM attendance WHERE employee_id = ? AND date = ?");
@@ -31,9 +50,8 @@ function formatTime($datetime)
 {
     if (!$datetime) return 'Not set';
 
-    $date = new DateTime($datetime, new DateTimeZone('UTC'));
-    $date->setTimezone(new DateTimeZone('Asia/Kolkata'));
-    return $date->format('H:i:s');
+    $date = new DateTime($datetime);  // Already in IST
+    return $date->format('h:i:s a');
 }
 
 function getTotalWorkTime($start, $stop, $breakStart, $breakEnd)
@@ -64,6 +82,65 @@ $stmt_all = $conn->prepare("SELECT date, start_time, break_start_time, break_end
 $stmt_all->bind_param("i", $employee_id);
 $stmt_all->execute();
 $result_all = $stmt_all->get_result();
+
+// Fetch employee details
+$stmt_name = $conn->prepare("SELECT username FROM employees WHERE id = ?");
+$stmt_name->bind_param("i", $employee_id);
+$stmt_name->execute();
+$result_name = $stmt_name->get_result();
+$employee = $result_name->fetch_assoc();
+$employee_name = $employee['username'] ?? 'Employee';
+$department = $employee['department'] ?? '';
+
+
+// Simple version without report type
+$start_date = date('Y-m-d', strtotime('-30 days'));
+$end_date = date('Y-m-d');
+$title = "Last 30 Days Report";
+
+// Fetch attendance data
+$stmt = $conn->prepare("SELECT date, start_time, break_start_time, break_end_time, stop_time 
+                       FROM attendance 
+                       WHERE employee_id = ? 
+                       AND date BETWEEN ? AND ?
+                       ORDER BY date DESC");
+$stmt->bind_param("iss", $employee_id, $start_date, $end_date);
+$stmt->execute();
+$result = $stmt->get_result();
+$attendance_data = $result->fetch_all(MYSQLI_ASSOC);
+
+// Calculate summary statistics
+$total_days = 0;
+$present_days = 0;
+$total_hours = 0;
+$total_breaks = 0;
+
+foreach ($attendance_data as $record) {
+    $total_days++;
+    if ($record['start_time']) $present_days++;
+
+    if ($record['start_time'] && $record['stop_time']) {
+        $start = strtotime($record['start_time']);
+        $stop = strtotime($record['stop_time']);
+        $work_seconds = $stop - $start;
+
+        // Subtract break time if available
+        if ($record['break_start_time'] && $record['break_end_time']) {
+            $break_start = strtotime($record['break_start_time']);
+            $break_end = strtotime($record['break_end_time']);
+            $break_seconds = $break_end - $break_start;
+            $work_seconds -= $break_seconds;
+            $total_breaks += $break_seconds;
+        }
+
+        $total_hours += $work_seconds;
+    }
+}
+
+$attendance_percentage = $total_days > 0 ? round(($present_days / $total_days) * 100, 2) : 0;
+$avg_hours_per_day = $present_days > 0 ? gmdate("H:i", $total_hours / $present_days) : '00:00';
+$total_work_hours = gmdate("H:i", $total_hours);
+$total_break_hours = gmdate("H:i", $total_breaks);
 ?>
 
 <!DOCTYPE html>
@@ -72,30 +149,97 @@ $result_all = $stmt_all->get_result();
 <head>
     <title>Employee Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- style css -->
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <!-- sidebar css -->
-    <link rel="stylesheet" href="../assets/css/sidebar.css">
-    <!-- employee dashboard css -->
-    <link rel="stylesheet" href="../assets/css/employee_dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/employee_dashboard.css">
+    <link rel="stylesheet" href="assets/css/chatbot.css">
     
+    <style>
+    
+    </style>
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <?php include('../sidebar.php') ?>
+    <!-- Modern Sidebar -->
+    <?php include('sidebar.php') ?>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
+        <?php if ($role === 'admin'): ?>
+        <div class="container py-3">
+            <h2>Admin Dashboard - Employee List</h2>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Username</th>
+                        <th>Department</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($all_employees as $emp): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($emp['id']) ?></td>
+                            <td><?= htmlspecialchars($emp['username']) ?></td>
+                            <td><?= htmlspecialchars($emp['department']) ?></td>
+                            <td><?= htmlspecialchars(ucfirst($emp['role'])) ?></td>
+                            <td>
+                                <a href="edit_employee.php?id=<?= $emp['id'] ?>" class="btn btn-sm btn-primary">Edit</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php else: ?>
+
         <div class="container py-3">
             <div class="dashboard-card p-4 mb-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="mb-0">
-                        <i class="fas fa-user-clock me-2"></i>Employee Dashboard
-                    </h2>
+                    <div class="d-flex flex-column">
+                        <h2 class="mb-0">
+                            <i class="fas fa-user-clock me-2"></i>Employee Dashboard
+                        </h2>
+                        <div id="live-clock" class="text-muted" style="font-size: 1rem; font-weight: normal;">
+                            <?php echo date('l, F j, Y h:i:s A'); ?>
+                        </div>
+                    </div>
+
                     <div class="status-badge <?php echo (!$attendance || $attendance['stop_time']) ? 'badge-inactive' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'badge-break' : 'badge-active'); ?>">
                         <?php echo (!$attendance || $attendance['stop_time']) ? 'Offline' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'On Break' : 'Active'); ?>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted">Total Days</h6>
+                            <h3><?= $total_days ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted">Present Days</h6>
+                            <h3><?= $present_days ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted">Attendance %</h6>
+                            <h3><?= $attendance_percentage ?>%</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted">Avg Hours/Day</h6>
+                            <h3><?= $avg_hours_per_day ?></h3>
+                        </div>
                     </div>
                 </div>
 
@@ -155,10 +299,6 @@ $result_all = $stmt_all->get_result();
                                             <i class="fas fa-stop me-2"></i>Stop Work
                                         </button>
                                     </form>
-
-                                    <a href="logout.php" class="btn btn-logout btn-custom">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </a>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -199,36 +339,77 @@ $result_all = $stmt_all->get_result();
                     </div>
                 </div>
             </div>
+        </div>
+        <?php endif; ?>
+    </div>
 
+    <!-- Chatbot Widget -->
+    <div id="chatbot-widget" class="chatbot-widget collapsed">
+        <div class="chatbot-header">
+            <span><i class="fas fa-robot me-2"></i>Employee Support</span>
+            <button id="chatbot-toggle" class="chatbot-toggle">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div id="chatbot-messages" class="chatbot-messages">
+            <div class="text-center py-3 text-muted">
+                Loading chat history...
+            </div>
+        </div>
+        <div id="chatbot-typing-indicator" class="typing-indicator">
+            <i class="fas fa-ellipsis-h"></i> Bot is typing...
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatbot-message-input" placeholder="Type your message..." autocomplete="off">
+            <button id="chatbot-send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
+    <!-- JavaScript -->
+    <script src="../assets/js/chatbot.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
     <script>
         // Toggle sidebar on mobile
         document.getElementById('toggleSidebar').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('sidebar-active');
-        });
-
-        // Toggle sidebar collapse on desktop
-        let isCollapsed = false;
-
-        function toggleSidebarCollapse() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
-
-            isCollapsed = !isCollapsed;
+            
             sidebar.classList.toggle('sidebar-collapsed');
             mainContent.classList.toggle('main-content-expanded');
-
+            
+            // Rotate the icon
+            const icon = this.querySelector('i');
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                icon.classList.remove('fa-chevron-left');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-left');
+            }
+            
             // Store preference in localStorage
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        }
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
+        });
 
-        // Check for saved preference
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            toggleSidebarCollapse();
-        }
+        // Check for saved preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.getElementById('mainContent');
+                const toggleBtn = document.getElementById('toggleSidebar');
+                const icon = toggleBtn.querySelector('i');
+                
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.add('main-content-expanded');
+                icon.classList.remove('fa-chevron-left');
+                icon.classList.add('fa-chevron-right');
+            }
+        });
 
         // Add click event to all nav-links to close sidebar on mobile after click
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -238,7 +419,26 @@ $result_all = $stmt_all->get_result();
                 }
             });
         });
+
+        // Real-time clock
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            document.getElementById('live-clock').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        updateClock(); // Initialize immediately
     </script>
 </body>
-
 </html>

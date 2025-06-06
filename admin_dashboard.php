@@ -16,7 +16,7 @@ $stmt->bind_result($logged_in_username);
 $stmt->fetch();
 $stmt->close();
 
-if ($logged_in_username !== "priyabrata7077@gmail.com") {
+if ($logged_in_username !== "abc@gmail.com") {
     // Not admin, deny access
     echo "Access denied. You do not have permission to view this page.";
     exit;
@@ -173,86 +173,457 @@ if (count($employee_ids) > 0) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard - Employee Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-
-    <!-- css -->
-     <link rel="stylesheet" href="admin_dashboard.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 80px;
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --light-bg: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background-color: #f5f5f5;
+        }
+        
+        /* Sidebar Styles */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--secondary-color);
+            color: white;
+            transition: all 0.3s;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        #sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        .sidebar-header h3 {
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        .sidebar-header .logo-collapsed {
+            display: none;
+        }
+        
+        #sidebar.collapsed .logo-full {
+            display: none;
+        }
+        
+        #sidebar.collapsed .logo-collapsed {
+            display: block;
+        }
+        
+        #sidebar.collapsed .nav-link span {
+            display: none;
+        }
+        
+        #sidebar.collapsed .nav-link i {
+            margin-right: 0;
+            font-size: 1.3rem;
+        }
+        
+        #sidebar.collapsed .dropdown-toggle::after {
+            display: none;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            margin: 5px 0;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content Styles */
+        #main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: all 0.3s;
+            padding: 20px;
+        }
+        
+        #main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        
+        .top-navbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        /* Cards */
+        .dashboard-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar {
+                margin-left: -250px;
+            }
+            
+            #sidebar.collapsed {
+                margin-left: 0;
+                width: 80px;
+            }
+            
+            #main-content {
+                margin-left: 0;
+            }
+            
+            #main-content.expanded {
+                margin-left: 0;
+            }
+            
+            body.active #sidebar {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
-<body class="container mt-5">
-    <h1>Admin Dashboard</h1>
-    <p>Logged in as: <strong><?php echo htmlspecialchars($logged_in_username); ?></strong></p>
-    <a href="logout.php" class="btn btn-danger mb-3">Logout</a>
-
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-4">
-            <label for="username" class="form-label">Filter by Username</label>
-            <select name="username" id="username" class="form-select">
-                <option value="">-- All Users --</option>
-                <?php
-                // Reset pointer and re-fetch all employees for dropdown
-                $employees_res = $conn->query("SELECT username FROM employees ORDER BY username ASC");
-                while ($row = $employees_res->fetch_assoc()):
-                ?>
-                    <option value="<?php echo htmlspecialchars($row['username']); ?>"
-                        <?php if ($filter_username === $row['username']) echo "selected"; ?>>
-                        <?php echo htmlspecialchars($row['username']); ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header d-flex flex-column align-items-center justify-content-center">
+            <div class="logo-full">
+                <h3>Admin Panel</h3>
+            </div>
+            <div class="logo-collapsed">
+                <i class="fas fa-user-shield fa-2x"></i>
+            </div>
         </div>
-
-        <div class="col-md-3">
-            <label for="start_date" class="form-label">Start Date</label>
-            <input type="date" name="start_date" id="start_date" class="form-control" value="<?php echo htmlspecialchars($filter_start_date); ?>">
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="dashboard.php">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="employees.php">
+                    <i class="fas fa-users"></i>
+                    <span>Employees</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="attendance.php">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Attendance</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="leaves.php">
+                    <i class="fas fa-calendar-minus"></i>
+                    <span>Leave Management</span>
+                </a>
+            </li>
+            
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                    <li><a class="dropdown-item" href="attendance-reports.php">Attendance Reports</a></li>
+                    <li><a class="dropdown-item" href="leave-reports.php">Leave Reports</a></li>
+                    <li><a class="dropdown-item" href="performance-reports.php">Performance Reports</a></li>
+                </ul>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="settings.php">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="position-absolute bottom-0 start-0 p-3 w-100">
+            <a href="logout.php" class="btn btn-outline-light w-100">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
         </div>
-
-        <div class="col-md-3">
-            <label for="end_date" class="form-label">End Date</label>
-            <input type="date" name="end_date" id="end_date" class="form-control" value="<?php echo htmlspecialchars($filter_end_date); ?>">
+    </div>
+    
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Top Navbar -->
+        <nav class="top-navbar d-flex justify-content-between align-items-center">
+            <div>
+                <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <span id="live-clock" class="text-muted"></span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        Admin User
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="settings.php"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Dashboard Content -->
+        <div class="container-fluid">
+            <h4 class="mb-4">Dashboard Overview</h4>
+            
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Total Employees</h6>
+                                <h3>124</h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                <i class="fas fa-users text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Present Today</h6>
+                                <h3>98</h3>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded">
+                                <i class="fas fa-user-check text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">On Leave</h6>
+                                <h3>12</h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                <i class="fas fa-calendar-minus text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Pending Requests</h6>
+                                <h3>5</h3>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                <i class="fas fa-bell text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts and Tables -->
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="dashboard-card">
+                        <h5 class="mb-3">Attendance Overview</h5>
+                        <div id="attendanceChart" style="height: 300px;">
+                            <!-- Chart would be rendered here -->
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                <p>Attendance chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="dashboard-card">
+                        <h5 class="mb-3">Recent Activities</h5>
+                        <div class="list-group">
+                            <div class="list-group-item border-0">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-user-clock text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">10 min ago</small>
+                                        <p class="mb-0">John Doe checked in</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item border-0">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-calendar-minus text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">25 min ago</small>
+                                        <p class="mb-0">Jane Smith applied for leave</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item border-0">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="fas fa-user-plus text-success"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted">1 hour ago</small>
+                                        <p class="mb-0">New employee registered</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="dashboard-card">
+                        <h5 class="mb-3">Pending Approvals</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>John Doe</td>
+                                        <td>Leave Application</td>
+                                        <td>2023-06-15 to 2023-06-17</td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success">Approve</button>
+                                            <button class="btn btn-sm btn-danger ms-1">Reject</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Jane Smith</td>
+                                        <td>Overtime Request</td>
+                                        <td>2023-06-10</td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success">Approve</button>
+                                            <button class="btn btn-sm btn-danger ms-1">Reject</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="col-md-2 align-self-end">
-            <button type="submit" class="btn btn-primary w-100">Filter</button>
-        </div>
-    </form>
-
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>Employee</th>
-                <th>Last Attendance Date</th>
-                <th>Start Time</th>
-                <th>Break Start</th>
-                <th>Break End</th>
-                <th>Stop Time</th>
-                <th>Weekly Work Hours</th>
-                <th>Monthly Work Hours</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($employee_data as $emp):
-                $att = $emp['last_attendance'];
-            ?>
-            <tr>
-                <td><?php echo htmlspecialchars($emp['username']); ?></td>
-                <td><?php echo $att ? htmlspecialchars($att['date']) : 'No records'; ?></td>
-                <td><?php echo $att ? formatTime($att['start_time']) : '-'; ?></td>
-                <td><?php echo $att ? formatTime($att['break_start_time']) : '-'; ?></td>
-                <td><?php echo $att ? formatTime($att['break_end_time']) : '-'; ?></td>
-<td><?php echo $att ? formatTime($att['stop_time']) : '-'; ?></td>
-<td><?php echo $emp['weekly_hours']; ?></td>
-<td><?php echo $emp['monthly_hours']; ?></td>
-</tr>
-<?php endforeach; ?>
-<?php if (empty($employee_data)): ?>
-<tr>
-<td colspan="8" class="text-center">No records found</td>
-</tr>
-<?php endif; ?>
-</tbody>
-</table>
-
-</body> </html> 
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sidebar Toggle
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('main-content').classList.toggle('expanded');
+        });
+        
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            document.getElementById('live-clock').textContent = now.toLocaleDateString('en-US', options);
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        // Initialize dropdowns
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl)
+        });
+    </script>
+</body>
+</html>

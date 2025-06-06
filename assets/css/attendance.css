@@ -1,0 +1,102 @@
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(1, 158, 226, 0.14);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summary-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.summary-card .number {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 10px 0;
+}
+
+.summary-card .label {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.summary-present {
+    background: linear-gradient(135deg, var(--success), #2a9d8f);
+}
+
+.summary-absent {
+    background: linear-gradient(135deg, var(--danger), #e63946);
+}
+
+.summary-hours {
+    background: linear-gradient(135deg, var(--info), #4361ee);
+}
+
+.summary-avg {
+    background: linear-gradient(135deg, var(--warning), #f3722c);
+}
+
+.table-custom {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.table-custom thead {
+    background-color: var(--primary);
+    color: white;
+}
+
+.table-custom th {
+    border: none;
+    padding: 15px;
+}
+
+.table-custom td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.status-present {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.status-absent {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+.status-partial {
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.badge-present {
+    background-color: rgba(76, 201, 240, 0.2);
+    color: var(--success);
+}
+
+.badge-absent {
+    background-color: rgba(247, 37, 133, 0.2);
+    color: var(--danger);
+}
+
+.badge-partial {
+    background-color: rgba(248, 150, 30, 0.2);
+    color: var(--warning);
+}
+
+.filter-form {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}

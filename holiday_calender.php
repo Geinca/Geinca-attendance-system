@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_holiday'])) {
     $holiday_name = $_POST['holiday_name'];
     $holiday_date = $_POST['holiday_date'];
     $holiday_type = $_POST['holiday_type'];
-    
+
     $insert_stmt = $conn->prepare("INSERT INTO holidays (name, date, type) VALUES (?, ?, ?)");
     $insert_stmt->bind_param("sss", $holiday_name, $holiday_date, $holiday_type);
     $insert_stmt->execute();
@@ -57,19 +57,28 @@ while ($row = $holidays_result->fetch_assoc()) {
 // Generate months for the year selector
 $years = range($current_year - 2, $current_year + 2);
 $months = [
-    '01' => 'January', '02' => 'February', '03' => 'March',
-    '04' => 'April', '05' => 'May', '06' => 'June',
-    '07' => 'July', '08' => 'August', '09' => 'September',
-    '10' => 'October', '11' => 'November', '12' => 'December'
+    '01' => 'January',
+    '02' => 'February',
+    '03' => 'March',
+    '04' => 'April',
+    '05' => 'May',
+    '06' => 'June',
+    '07' => 'July',
+    '08' => 'August',
+    '09' => 'September',
+    '10' => 'October',
+    '11' => 'November',
+    '12' => 'December'
 ];
 
 // Function to generate calendar
-function generateCalendar($year, $month, $holidays) {
+function generateCalendar($year, $month, $holidays)
+{
     $first_day = date('N', strtotime("$year-$month-01"));
     $days_in_month = date('t', strtotime("$year-$month-01"));
     $calendar = [];
     $day = 1;
-    
+
     for ($i = 0; $i < 6; $i++) {
         for ($j = 1; $j <= 7; $j++) {
             if (($i == 0 && $j < $first_day) || $day > $days_in_month) {
@@ -86,7 +95,7 @@ function generateCalendar($year, $month, $holidays) {
             }
         }
     }
-    
+
     return $calendar;
 }
 
@@ -95,20 +104,22 @@ $calendar = generateCalendar($year, $month, $holidays);
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Holiday Calendar</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- style css -->
-     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <!-- sidebar css -->
-     <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
     <!-- holiday calender css -->
-     <link rel="stylesheet" href="assets/css/holiday_calender.css">
+    <link rel="stylesheet" href="assets/css/holiday_calender.css">
     <style>
-        
+
     </style>
 </head>
+
 <body>
     <!-- Sidebar -->
     <?php include('sidebar.php') ?>.
@@ -117,13 +128,13 @@ $calendar = generateCalendar($year, $month, $holidays);
     <div class="main-content">
         <div class="container-fluid">
             <h2 class="mb-4"><i class="fas fa-calendar-day me-2"></i> Holiday Calendar</h2>
-            
+
             <!-- Calendar Navigation -->
             <div class="calendar-container">
                 <div class="calendar-header">
                     <h3 class="calendar-title"><?= date('F Y', strtotime("$year-$month-01")) ?></h3>
                     <div class="calendar-nav">
-                        <a href="?month=<?= $month ?>&year=<?= $year-1 ?>" class="btn btn-outline-primary">
+                        <a href="?month=<?= $month ?>&year=<?= $year - 1 ?>" class="btn btn-outline-primary">
                             <i class="fas fa-chevron-left"></i> Prev Year
                         </a>
                         <select class="form-select" onchange="window.location.href='?month='+this.value+'&year=<?= $year ?>'">
@@ -136,114 +147,79 @@ $calendar = generateCalendar($year, $month, $holidays);
                                 <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <a href="?month=<?= $month ?>&year=<?= $year+1 ?>" class="btn btn-outline-primary">
+                        <a href="?month=<?= $month ?>&year=<?= $year + 1 ?>" class="btn btn-outline-primary">
                             Next Year <i class="fas fa-chevron-right"></i>
                         </a>
                     </div>
                 </div>
-                
-                <table class="calendar-table">
-                    <thead>
-                        <tr>
-                            <th>Mon</th>
-                            <th>Tue</th>
-                            <th>Wed</th>
-                            <th>Thu</th>
-                            <th>Fri</th>
-                            <th>Sat</th>
-                            <th>Sun</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($calendar as $week): ?>
-                            <tr>
-                                <?php foreach ($week as $day => $data): ?>
-                                    <?php if ($data === null): ?>
-                                        <td class="other-month"></td>
-                                    <?php else: ?>
-                                        <?php
-                                        $is_today = $data['date'] == date('Y-m-d');
-                                        $is_holiday = $data['is_holiday'];
-                                        $cell_class = $is_today ? 'today' : '';
-                                        $cell_class .= $is_holiday ? ' holiday-cell' : '';
-                                        ?>
-                                        <td class="<?= $cell_class ?>">
-                                            <div class="calendar-day"><?= $data['day'] ?></div>
-                                            <?php if ($is_holiday): ?>
-                                                <span class="holiday-type type-<?= $data['holiday_data']['type'] ?>">
-                                                    <?= ucfirst($data['holiday_data']['type']) ?>
-                                                </span>
-                                                <div class="holiday-name"><?= $data['holiday_data']['name'] ?></div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <table class="calendar-table">
+                            <thead>
+                                <tr>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                    <th>Sun</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($calendar as $week): ?>
+                                    <tr>
+                                        <?php foreach ($week as $day => $data): ?>
+                                            <?php if ($data === null): ?>
+                                                <td class="other-month"></td>
+                                            <?php else: ?>
+                                                <?php
+                                                $is_today = $data['date'] == date('Y-m-d');
+                                                $is_holiday = $data['is_holiday'];
+                                                $cell_class = $is_today ? 'today' : '';
+                                                $cell_class .= $is_holiday ? ' holiday-cell' : '';
+                                                ?>
+                                                <td class="<?= $cell_class ?>">
+                                                    <div class="calendar-day"><?= $data['day'] ?></div>
+                                                    <?php if ($is_holiday): ?>
+                                                        <span class="holiday-type type-<?= $data['holiday_data']['type'] ?>">
+                                                            <?= ucfirst($data['holiday_data']['type']) ?>
+                                                        </span>
+                                                        <div class="holiday-name"><?= $data['holiday_data']['name'] ?></div>
+                                                    <?php endif; ?>
+                                                </td>
                                             <?php endif; ?>
-                                        </td>
-                                    <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </tr>
                                 <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-8">
-                    <!-- Holiday List -->
-                    <div class="holiday-list">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h4><i class="fas fa-list me-2"></i> Holidays in <?= $year ?></h4>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHolidayModal">
-                                <i class="fas fa-plus me-2"></i> Add Holiday
-                            </button>
-                        </div>
-                        
-                        <?php if (count($holidays) > 0): ?>
-                            <?php foreach ($holidays as $date => $holiday): ?>
-                                <div class="holiday-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="holiday-date"><?= date('D, d M Y', strtotime($date)) ?></span>
-                                            <span class="badge badge-holiday ms-2"><?= ucfirst($holiday['type']) ?></span>
-                                            <div><?= $holiday['name'] ?></div>
-                                        </div>
-                                        <?php if ($_SESSION['is_admin']): ?>
-                                            <a href="?delete=<?= $holiday['id'] ?>&year=<?= $year ?>&month=<?= $month ?>" 
-                                               class="btn btn-sm btn-outline-danger"
-                                               onclick="return confirm('Are you sure you want to delete this holiday?')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="text-center py-4 text-muted">
-                                No holidays found for <?= $year ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                    <div class="col-md-4">
+                        <!-- Holiday Types Legend -->
+                        <div class="holiday-list">
+                            <h4 class="mb-4"><i class="fas fa-info-circle me-2"></i> Holiday Types</h4>
+                            <div class="holiday-item">
+                                <span class="badge type-national me-2">National</span>
+                                Government declared national holidays
                             </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <!-- Holiday Types Legend -->
-                    <div class="holiday-list">
-                        <h4 class="mb-4"><i class="fas fa-info-circle me-2"></i> Holiday Types</h4>
-                        <div class="holiday-item">
-                            <span class="badge type-national me-2">National</span>
-                            Government declared national holidays
-                        </div>
-                        <div class="holiday-item">
-                            <span class="badge type-company me-2">Company</span>
-                            Organization-specific holidays
-                        </div>
-                        <div class="holiday-item">
-                            <span class="badge type-religious me-2">Religious</span>
-                            Religious festivals and observances
+                            <div class="holiday-item">
+                                <span class="badge type-company me-2">Company</span>
+                                Organization-specific holidays
+                            </div>
+                            <div class="holiday-item">
+                                <span class="badge type-religious me-2">Religious</span>
+                                Religious festivals and observances
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </div>
-    
+
     <!-- Add Holiday Modal -->
     <div class="modal fade" id="addHolidayModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -289,4 +265,5 @@ $calendar = generateCalendar($year, $month, $holidays);
         });
     </script>
 </body>
+
 </html>

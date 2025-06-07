@@ -31,7 +31,7 @@ $department = $user['department'] ?? '';
 
 $all_employees = [];
 if ($role === 'admin') {
-    $stmt_all_emp = $conn->prepare("SELECT id, username, department, role FROM employees ORDER BY username ASC");
+    $stmt_all_emp = $conn->prepare("SELECT * FROM employees ORDER BY id ASC");
     $stmt_all_emp->execute();
     $result_all_emp = $stmt_all_emp->get_result();
     $all_employees = $result_all_emp->fetch_all(MYSQLI_ASSOC);
@@ -155,9 +155,28 @@ $total_break_hours = gmdate("H:i", $total_breaks);
     <link rel="stylesheet" href="assets/css/sidebar.css">
     <link rel="stylesheet" href="assets/css/employee_dashboard.css">
     <link rel="stylesheet" href="assets/css/chatbot.css">
-    
+
     <style>
-    
+        /* only foy admin table */
+        table {
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+        }
+
+        table thead th {
+            background-color: #343a40;
+            color: #fff;
+            border: none;
+        }
+
+        table tbody tr {
+            background-color: #ffffff;
+            transition: box-shadow 0.3s ease;
+        }
+
+        table tbody tr:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 
@@ -168,183 +187,179 @@ $total_break_hours = gmdate("H:i", $total_breaks);
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <?php if ($role === 'admin'): ?>
-        <div class="container py-3">
-            <h2>Admin Dashboard - Employee List</h2>
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Username</th>
-                        <th>Department</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($all_employees as $emp): ?>
+            <div class="container py-3">
+                <h2>Admin Dashboard - Employee List</h2>
+                <table class="table table-hover table-responsive shadow-sm rounded" id="employeeTable">
+                    <thead class="table-dark">
                         <tr>
-                            <td><?= htmlspecialchars($emp['id']) ?></td>
-                            <td><?= htmlspecialchars($emp['username']) ?></td>
-                            <td><?= htmlspecialchars($emp['department']) ?></td>
-                            <td><?= htmlspecialchars(ucfirst($emp['role'])) ?></td>
-                            <td>
-                                <a href="edit_employee.php?id=<?= $emp['id'] ?>" class="btn btn-sm btn-primary">Edit</a>
-                            </td>
+                            <th>Employee ID</th>
+                            <th>Username</th>
+                            <th>Department</th>
+                            <th>Role</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($all_employees as $emp): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($emp['id']) ?></td>
+                                <td><?= htmlspecialchars($emp['username']) ?></td>
+                                <td><?= htmlspecialchars($emp['department']) ?></td>
+                                <td><?= htmlspecialchars(ucfirst($emp['role'])) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
 
         <?php else: ?>
 
-        <div class="container py-3">
-            <div class="dashboard-card p-4 mb-5">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="d-flex flex-column">
-                        <h2 class="mb-0">
-                            <i class="fas fa-user-clock me-2"></i>Employee Dashboard
-                        </h2>
-                        <div id="live-clock" class="text-muted" style="font-size: 1rem; font-weight: normal;">
-                            <?php echo date('l, F j, Y h:i:s A'); ?>
+            <div class="container py-3">
+                <div class="dashboard-card p-4 mb-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex flex-column">
+                            <h2 class="mb-0">
+                                <i class="fas fa-user-clock me-2"></i>Employee Dashboard
+                            </h2>
+                            <div id="live-clock" class="text-muted" style="font-size: 1rem; font-weight: normal;">
+                                <?php echo date('l, F j, Y h:i:s A'); ?>
+                            </div>
+                        </div>
+
+                        <div class="status-badge <?php echo (!$attendance || $attendance['stop_time']) ? 'badge-inactive' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'badge-break' : 'badge-active'); ?>">
+                            <?php echo (!$attendance || $attendance['stop_time']) ? 'Offline' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'On Break' : 'Active'); ?>
                         </div>
                     </div>
 
-                    <div class="status-badge <?php echo (!$attendance || $attendance['stop_time']) ? 'badge-inactive' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'badge-break' : 'badge-active'); ?>">
-                        <?php echo (!$attendance || $attendance['stop_time']) ? 'Offline' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'On Break' : 'Active'); ?>
-                    </div>
-                </div>
-
-                <!-- Summary Cards -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="dashboard-card stat-card">
-                            <h6 class="text-muted">Total Days</h6>
-                            <h3><?= $total_days ?></h3>
+                    <!-- Summary Cards -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="dashboard-card stat-card">
+                                <h6 class="text-muted">Total Days</h6>
+                                <h3><?= $total_days ?></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-card stat-card">
+                                <h6 class="text-muted">Present Days</h6>
+                                <h3><?= $present_days ?></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-card stat-card">
+                                <h6 class="text-muted">Attendance %</h6>
+                                <h3><?= $attendance_percentage ?>%</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="dashboard-card stat-card">
+                                <h6 class="text-muted">Avg Hours/Day</h6>
+                                <h3><?= $avg_hours_per_day ?></h3>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="dashboard-card stat-card">
-                            <h6 class="text-muted">Present Days</h6>
-                            <h3><?= $present_days ?></h3>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="dashboard-card stat-card">
-                            <h6 class="text-muted">Attendance %</h6>
-                            <h3><?= $attendance_percentage ?>%</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="dashboard-card stat-card">
-                            <h6 class="text-muted">Avg Hours/Day</h6>
-                            <h3><?= $avg_hours_per_day ?></h3>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="dashboard-card p-4 h-100">
-                            <h5 class="mb-4"><i class="fas fa-clock me-2"></i>Today's Status</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="dashboard-card p-4 h-100">
+                                <h5 class="mb-4"><i class="fas fa-clock me-2"></i>Today's Status</h5>
 
-                            <?php if (!$attendance): ?>
-                                <p class="text-muted mb-4">You haven't started working today</p>
-                                <form method="post" action="action.php">
-                                    <button type="submit" name="start_work" class="btn btn-start btn-custom w-100">
-                                        <i class="fas fa-play me-2"></i>Start Work
-                                    </button>
-                                </form>
-
-                            <?php elseif ($attendance['stop_time']): ?>
-                                <div class="mb-4">
-                                    <p class="mb-2">Work started at: <span class="time-display"><?php echo formatTime($attendance['start_time']); ?></span></p>
-                                    <p class="mb-2">Work stopped at: <span class="time-display"><?php echo formatTime($attendance['stop_time']); ?></span></p>
-                                    <p class="mb-2">Total work time: <span class="time-display"><?php echo getTotalWorkTime($attendance['start_time'], $attendance['stop_time'], $attendance['break_start_time'], $attendance['break_end_time']); ?></span></p>
-                                </div>
-                                <a href="logout.php" class="btn btn-logout btn-custom w-100">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a>
-
-                            <?php else: ?>
-                                <div class="mb-4">
-                                    <p class="mb-2">Work started at: <span class="time-display"><?php echo formatTime($attendance['start_time']); ?></span></p>
-
-                                    <?php if ($attendance['break_start_time']): ?>
-                                        <p class="mb-2">Break started at: <span class="time-display"><?php echo formatTime($attendance['break_start_time']); ?></span></p>
-                                    <?php endif; ?>
-
-                                    <?php if ($attendance['break_end_time']): ?>
-                                        <p class="mb-2">Break ended at: <span class="time-display"><?php echo formatTime($attendance['break_end_time']); ?></span></p>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div class="d-grid gap-3">
-                                    <?php if (!$attendance['break_start_time'] || ($attendance['break_end_time'] && strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time']))): ?>
-                                        <form method="post" action="action.php">
-                                            <button type="submit" name="start_break" class="btn btn-break btn-custom">
-                                                <i class="fas fa-coffee me-2"></i>Start Break
-                                            </button>
-                                        </form>
-                                    <?php elseif (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])): ?>
-                                        <form method="post" action="action.php">
-                                            <button type="submit" name="stop_break" class="btn btn-end-break btn-custom">
-                                                <i class="fas fa-clock me-2"></i>End Break
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-
+                                <?php if (!$attendance): ?>
+                                    <p class="text-muted mb-4">You haven't started working today</p>
                                     <form method="post" action="action.php">
-                                        <button type="submit" name="stop_work" class="btn btn-stop btn-custom">
-                                            <i class="fas fa-stop me-2"></i>Stop Work
+                                        <button type="submit" name="start_work" class="btn btn-start btn-custom w-100">
+                                            <i class="fas fa-play me-2"></i>Start Work
                                         </button>
                                     </form>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="dashboard-card p-4 h-100">
-                            <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Recent Activity</h5>
-                            <div class="table-responsive">
-                                <table class="table table-custom table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Status</th>
-                                            <th>Time</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php while ($row = $result_all->fetch_assoc()): ?>
+                                <?php elseif ($attendance['stop_time']): ?>
+                                    <div class="mb-4">
+                                        <p class="mb-2">Work started at: <span class="time-display"><?php echo formatTime($attendance['start_time']); ?></span></p>
+                                        <p class="mb-2">Work stopped at: <span class="time-display"><?php echo formatTime($attendance['stop_time']); ?></span></p>
+                                        <p class="mb-2">Total work time: <span class="time-display"><?php echo getTotalWorkTime($attendance['start_time'], $attendance['stop_time'], $attendance['break_start_time'], $attendance['break_end_time']); ?></span></p>
+                                    </div>
+                                    <a href="logout.php" class="btn btn-logout btn-custom w-100">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </a>
+
+                                <?php else: ?>
+                                    <div class="mb-4">
+                                        <p class="mb-2">Work started at: <span class="time-display"><?php echo formatTime($attendance['start_time']); ?></span></p>
+
+                                        <?php if ($attendance['break_start_time']): ?>
+                                            <p class="mb-2">Break started at: <span class="time-display"><?php echo formatTime($attendance['break_start_time']); ?></span></p>
+                                        <?php endif; ?>
+
+                                        <?php if ($attendance['break_end_time']): ?>
+                                            <p class="mb-2">Break ended at: <span class="time-display"><?php echo formatTime($attendance['break_end_time']); ?></span></p>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="d-grid gap-3">
+                                        <?php if (!$attendance['break_start_time'] || ($attendance['break_end_time'] && strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time']))): ?>
+                                            <form method="post" action="action.php">
+                                                <button type="submit" name="start_break" class="btn btn-break btn-custom">
+                                                    <i class="fas fa-coffee me-2"></i>Start Break
+                                                </button>
+                                            </form>
+                                        <?php elseif (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])): ?>
+                                            <form method="post" action="action.php">
+                                                <button type="submit" name="stop_break" class="btn btn-end-break btn-custom">
+                                                    <i class="fas fa-clock me-2"></i>End Break
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+
+                                        <form method="post" action="action.php">
+                                            <button type="submit" name="stop_work" class="btn btn-stop btn-custom">
+                                                <i class="fas fa-stop me-2"></i>Stop Work
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="dashboard-card p-4 h-100">
+                                <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Recent Activity</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-custom table-hover mb-0">
+                                        <thead>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($row['date']); ?></td>
-                                                <td>
-                                                    <?php if ($row['stop_time']): ?>
-                                                        <span class="badge bg-danger bg-opacity-10 text-danger">Completed</span>
-                                                    <?php elseif ($row['break_start_time'] && (!$row['break_end_time'] || strtotime($row['break_end_time']) < strtotime($row['break_start_time']))): ?>
-                                                        <span class="badge bg-warning bg-opacity-10 text-warning">On Break</span>
-                                                    <?php elseif ($row['start_time']): ?>
-                                                        <span class="badge bg-success bg-opacity-10 text-success">Working</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td><?php echo getTotalWorkTime($row['start_time'], $row['stop_time'], $row['break_start_time'], $row['break_end_time']); ?></td>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Time</th>
                                             </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php while ($row = $result_all->fetch_assoc()): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($row['date']); ?></td>
+                                                    <td>
+                                                        <?php if ($row['stop_time']): ?>
+                                                            <span class="badge bg-danger bg-opacity-10 text-danger">Completed</span>
+                                                        <?php elseif ($row['break_start_time'] && (!$row['break_end_time'] || strtotime($row['break_end_time']) < strtotime($row['break_start_time']))): ?>
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning">On Break</span>
+                                                        <?php elseif ($row['start_time']): ?>
+                                                            <span class="badge bg-success bg-opacity-10 text-success">Working</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td><?php echo getTotalWorkTime($row['start_time'], $row['stop_time'], $row['break_start_time'], $row['break_end_time']); ?></td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
         <?php endif; ?>
     </div>
 
     <!-- Chatbot Widget -->
-    <div id="chatbot-widget" class="chatbot-widget collapsed">
+    <!-- <div id="chatbot-widget" class="chatbot-widget collapsed">
         <div class="chatbot-header">
             <span><i class="fas fa-robot me-2"></i>Employee Support</span>
             <button id="chatbot-toggle" class="chatbot-toggle">
@@ -365,7 +380,7 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
-    </div>
+    </div> -->
 
     <!-- JavaScript -->
     <script src="../assets/js/chatbot.js"></script>
@@ -378,10 +393,10 @@ $total_break_hours = gmdate("H:i", $total_breaks);
         document.getElementById('toggleSidebar').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
-            
+
             sidebar.classList.toggle('sidebar-collapsed');
             mainContent.classList.toggle('main-content-expanded');
-            
+
             // Rotate the icon
             const icon = this.querySelector('i');
             if (sidebar.classList.contains('sidebar-collapsed')) {
@@ -391,7 +406,7 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                 icon.classList.remove('fa-chevron-right');
                 icon.classList.add('fa-chevron-left');
             }
-            
+
             // Store preference in localStorage
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
         });
@@ -403,7 +418,7 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                 const mainContent = document.getElementById('mainContent');
                 const toggleBtn = document.getElementById('toggleSidebar');
                 const icon = toggleBtn.querySelector('i');
-                
+
                 sidebar.classList.add('sidebar-collapsed');
                 mainContent.classList.add('main-content-expanded');
                 icon.classList.remove('fa-chevron-left');
@@ -441,4 +456,5 @@ $total_break_hours = gmdate("H:i", $total_breaks);
         updateClock(); // Initialize immediately
     </script>
 </body>
+
 </html>

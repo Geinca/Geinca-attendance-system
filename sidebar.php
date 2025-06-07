@@ -1,5 +1,9 @@
 <?php
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Fetch employee name for sidebar
 $stmt_name = $conn->prepare("SELECT name FROM employees WHERE id = ?");
 $stmt_name->bind_param("i", $employee_id);
@@ -27,11 +31,19 @@ $employee_name = $employee['name'] ?? 'Employee'; //
                 <i class="fas fa-users-cog"></i>
                 <span>Manage Employees</span>
             </a>
-            <a href="all_reports.php" class="nav-link">
+            <a href="leave_management.php" class="nav-link">
+                <i class="fa-solid fa-pen-nib"></i>
+                <span>Leave Management</span>
+            </a>
+            <a href="holiday_management.php" class="nav-link">
+                <i class="fa-solid fa-pen-nib"></i>
+                <span>Holiday Management</span>
+            </a>
+            <a href="#" class="nav-link">
                 <i class="fas fa-chart-line"></i>
                 <span>All Reports</span>
             </a>
-            <a href="admin_settings.php" class="nav-link">
+            <a href="#" class="nav-link">
                 <i class="fas fa-cogs"></i>
                 <span>Settings</span>
             </a>

@@ -249,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['apply_leave'])) {
                                 <div class="col-md-6">
                                     <label class="form-label">Available Leave Balance</label>
                                     <input type="text" class="form-control" 
-                                           value="<?= htmlspecialchars($employee['available_leaves']) ?> days" disabled>
+                                           value="<?= htmlspecialchars($employee['available_leaves'] ?? 0) ?> days" disabled>
                                 </div>
                             </div>
                             
@@ -292,7 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['apply_leave'])) {
                     <div class="leave-balance-card">
                         <h5 class="mb-4"><i class="fas fa-calendar-check me-2"></i> Your Leave Balance</h5>
                         <div class="text-center">
-                            <div class="balance-number"><?= htmlspecialchars($employee['available_leaves']) ?></div>
+                            <div class="balance-number"><?= htmlspecialchars($employee['available_leaves'] ?? 0) ?></div>
                             <div>days remaining</div>
                         </div>
                     </div>

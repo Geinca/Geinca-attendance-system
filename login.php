@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $role;
 
                 if ($role === 'admin') {
-                    header("Location: admin_dashboard.php");
+                    header("Location: dashboard.php");
                 } else {
                     header("Location: dashboard.php");
                 }
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html>
 
 <head>
-    <title>Login / Register</title>
+    <title>Login</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -120,18 +120,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <body class="from-gray-900 via-purple-900 to-violet-800 min-h-screen flex items-center justify-center p-4">
     <div class="card w-full max-w-xs sm:max-w-sm md:max-w-md p-6 sm:p-8 shadow-xl">
-        <div class="text-center mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p class="text-gray-300">Manage your work attendance</p>
-        </div>
+        
 
-        <div class="flex mb-6 border-b border-gray-700">
-            <button id="loginTab" onclick="showTab('login')" class="tab-active py-3 px-4 font-medium text-white flex-1 text-center">
+        <div class="flex mb-6">
+            <!-- <button id="loginTab" onclick="showTab('login')" class="tab-active py-3 px-4 font-medium text-white flex-1 text-center">
                 Sign In
-            </button>
-            <button id="registerTab" onclick="showTab('register')" class="py-3 px-4 font-medium text-gray-400 flex-1 text-center hover:text-white transition">
+            </button> -->
+            <img src="./assets/image/geinca_logo.png" alt="" width="100px" style="margin: 0 auto;">
+            <!-- <button id="registerTab" onclick="showTab('register')" class="py-3 px-4 font-medium text-gray-400 flex-1 text-center hover:text-white transition">
                 Register
-            </button>
+            </button> -->
         </div>
 
         <div id="loginForm">
@@ -156,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
         </div>
 
-        <div id="registerForm" class="hidden">
+        <!-- <div id="registerForm" class="hidden">
             <form method="post" class="space-y-6">
                 <input type="hidden" name="action" value="register">
                 <div>
@@ -181,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php endif; ?>
             </form>
         </div>
-    </div>
+    </div> -->
 
     <script>
         function showTab(tab) {

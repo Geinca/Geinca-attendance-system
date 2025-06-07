@@ -16,11 +16,7 @@ $stmt->bind_result($logged_in_username);
 $stmt->fetch();
 $stmt->close();
 
-if ($logged_in_username !== "abc@gmail.com") {
-    // Not admin, deny access
-    echo "Access denied. You do not have permission to view this page.";
-    exit;
-}
+
 
 // Helper functions
 function formatTime($datetime) {

@@ -92,13 +92,81 @@ $employee = $result_name->fetch_assoc();
 $employee_name = $employee['username'] ?? 'Employee';
 $department = $employee['department'] ?? '';
 
+// fetch total employee count expect admin
+$total_employees = 0;
+
+if ($role === 'admin') {
+    $stmt_emp_count = $conn->prepare("SELECT COUNT(*) AS total FROM employees WHERE role != 'admin'");
+    $stmt_emp_count->execute();
+    $result_emp_count = $stmt_emp_count->get_result();
+    $row_emp_count = $result_emp_count->fetch_assoc();
+    $total_employees = $row_emp_count['total'] ?? 0;
+}
+
+// fetch how many employees are present
+$present_today = 0;
+
+if ($role === 'admin') {
+    // First, get IDs of all non-admin employees
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total 
+        FROM attendance 
+        WHERE DATE(date) = CURDATE() 
+        AND employee_id IN (
+            SELECT id FROM employees WHERE role != 'admin'
+        )
+    ");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $present_today = $row['total'] ?? 0;
+}
+
+// fetch how many employees are on leave
+$on_leave_today = 0;
+
+if ($role === 'admin') {
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM leave_applications
+        WHERE CURDATE() BETWEEN start_date AND end_date
+        AND employee_id IN (
+            SELECT id FROM employees WHERE role != 'admin'
+        )
+    ");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $on_leave_today = $row['total'] ?? 0;
+}
+
+// fetch pending leave requests
+$pending_requests = 0;
+
+if ($role === 'admin') {
+    // Count leave requests with status = 'pending' where the requester is NOT an admin
+    $stmtPending = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM leave_applications AS l
+        JOIN employees          AS e ON e.id = l.employee_id
+        WHERE l.status = 'pending'      -- adjust if your column is named differently
+          AND e.role   != 'admin'
+    ");
+    $stmtPending->execute();
+    $resultPending = $stmtPending->get_result();
+    $rowPending    = $resultPending->fetch_assoc();
+    $pending_requests = $rowPending['total'] ?? 0;
+}
+
+
+
 
 // Simple version without report type
 $start_date = date('Y-m-d', strtotime('-30 days'));
 $end_date = date('Y-m-d');
 $title = "Last 30 Days Report";
 
-// Fetch attendance data
+// Fetch attendance data of one employee
 $stmt = $conn->prepare("SELECT date, start_time, break_start_time, break_end_time, stop_time 
                        FROM attendance 
                        WHERE employee_id = ? 
@@ -108,6 +176,38 @@ $stmt->bind_param("iss", $employee_id, $start_date, $end_date);
 $stmt->execute();
 $result = $stmt->get_result();
 $attendance_data = $result->fetch_all(MYSQLI_ASSOC);
+
+// For paginated today's attendance of all non-admins
+$limit = 10; // records per page
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$offset = ($page - 1) * $limit;
+$today = date('Y-m-d');
+$total_stmt = $conn->prepare("
+    SELECT COUNT(*) AS total 
+    FROM attendance a 
+    JOIN employees e ON a.employee_id = e.id 
+    WHERE e.role != 'admin' AND a.date = ?
+");
+$total_stmt->bind_param("s", $today);
+$total_stmt->execute();
+$total_result = $total_stmt->get_result();
+$total_records = $total_result->fetch_assoc()['total'] ?? 0;
+$total_pages = ceil($total_records / $limit);
+$today_attendance_stmt = $conn->prepare("
+    SELECT 
+        a.date, a.start_time, a.stop_time, a.break_start_time, a.break_end_time, 
+        e.username 
+    FROM attendance a
+    JOIN employees e ON a.employee_id = e.id
+    WHERE e.role != 'admin' AND a.date = ?
+    ORDER BY a.start_time DESC
+    LIMIT ? OFFSET ?
+");
+$today_attendance_stmt->bind_param("sii", $today, $limit, $offset);
+$today_attendance_stmt->execute();
+$result_all = $today_attendance_stmt->get_result();
+
+
 
 // Calculate summary statistics
 $total_days = 0;
@@ -149,7 +249,7 @@ $total_break_hours = gmdate("H:i", $total_breaks);
 <head>
     <title>Employee Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/sidebar.css">
@@ -177,6 +277,16 @@ $total_break_hours = gmdate("H:i", $total_breaks);
         table tbody tr:hover {
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
+        .pagination .page-link {
+            color: #007bff;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -186,83 +296,114 @@ $total_break_hours = gmdate("H:i", $total_breaks);
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <?php if ($role === 'admin'): ?>
-            <div class="container py-3">
-                <h2>Admin Dashboard - Employee List</h2>
-                <table class="table table-hover table-responsive shadow-sm rounded" id="employeeTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Username</th>
-                            <th>Department</th>
-                            <th>Role</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($all_employees as $emp): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($emp['id']) ?></td>
-                                <td><?= htmlspecialchars($emp['username']) ?></td>
-                                <td><?= htmlspecialchars($emp['department']) ?></td>
-                                <td><?= htmlspecialchars(ucfirst($emp['role'])) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
 
-        <?php else: ?>
+        <div class="container py-3">
+            <div class="dashboard-card p-4 mb-5">
+                <div class="mb-4">
 
-            <div class="container py-3">
-                <div class="dashboard-card p-4 mb-5">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="d-flex flex-column">
-                            <h2 class="mb-0">
-                                <i class="fas fa-user-clock me-2"></i>Employee Dashboard
-                            </h2>
-                            <div id="live-clock" class="text-muted" style="font-size: 1rem; font-weight: normal;">
-                                <?php echo date('l, F j, Y h:i:s A'); ?>
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div id="live-clock" class="text-muted" style="font-size: 1rem; font-weight: 600;">
+                            <?php echo ('<i class="fas fa-clock"></i> ' . date('l, F j, Y h:i:s A')); ?>
                         </div>
-
                         <div class="status-badge <?php echo (!$attendance || $attendance['stop_time']) ? 'badge-inactive' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'badge-break' : 'badge-active'); ?>">
                             <?php echo (!$attendance || $attendance['stop_time']) ? 'Offline' : ($attendance['break_start_time'] && (!$attendance['break_end_time'] || strtotime($attendance['break_end_time']) < strtotime($attendance['break_start_time'])) ? 'On Break' : 'Active'); ?>
                         </div>
                     </div>
 
-                    <!-- Summary Cards -->
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="dashboard-card stat-card">
-                                <h6 class="text-muted">Total Days</h6>
-                                <h3><?= $total_days ?></h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="dashboard-card stat-card">
-                                <h6 class="text-muted">Present Days</h6>
-                                <h3><?= $present_days ?></h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="dashboard-card stat-card">
-                                <h6 class="text-muted">Attendance %</h6>
-                                <h3><?= $attendance_percentage ?>%</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="dashboard-card stat-card">
-                                <h6 class="text-muted">Avg Hours/Day</h6>
-                                <h3><?= $avg_hours_per_day ?></h3>
-                            </div>
+                    <h4 class="mb-0">Dashboard overview</h4>
+
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted"><?= ($role === 'admin') ? 'Total Employees' : 'Total Days' ?></h6>
+                            <h3><?= ($role === 'admin') ? $total_employees : $total_days ?></h3>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted"><?= ($role === 'admin') ? 'Present Today' : 'Present Days' ?></h6>
+                            <h3><?= ($role === 'admin') ? $present_today : $present_days ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted"><?= ($role === 'admin') ? 'On Leave' : 'Attendance %' ?></h6>
+                            <h3><?= ($role === 'admin') ? $on_leave_today : $attendance_percentage . '%' ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card stat-card">
+                            <h6 class="text-muted"><?= ($role === 'admin') ? 'Pending Requests' : 'Avg Hours/Days' ?></h6>
+                            <h3><?= ($role === 'admin') ? $pending_requests : $avg_hours_per_day ?></h3>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="row">
+                <div class="row">
+                    <?php if ($role === 'admin'): ?>
+                        <div class="col-md-12">
+                            <div class="dashboard-card p-4 h-100">
+                                <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Today's Activity (All Employees)</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-custom table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Total Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if ($result_all->num_rows > 0): ?>
+                                                <?php while ($row = $result_all->fetch_assoc()): ?>
+                                                    <tr>
+                                                        <td><?= htmlspecialchars($row['username']) ?></td>
+                                                        <td><?= htmlspecialchars($row['date']) ?></td>
+                                                        <td>
+                                                            <?php if ($row['stop_time']): ?>
+                                                                <span class="badge bg-danger bg-opacity-10 text-danger">Completed</span>
+                                                            <?php elseif ($row['break_start_time'] && (!$row['break_end_time'] || strtotime($row['break_end_time']) < strtotime($row['break_start_time']))): ?>
+                                                                <span class="badge bg-warning bg-opacity-10 text-warning">On Break</span>
+                                                            <?php elseif ($row['start_time']): ?>
+                                                                <span class="badge bg-success bg-opacity-10 text-success">Working</span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-secondary bg-opacity-10 text-muted">No Activity</span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td><?= getTotalWorkTime($row['start_time'], $row['stop_time'], $row['break_start_time'], $row['break_end_time']) ?></td>
+                                                    </tr>
+                                                <?php endwhile; ?>
+                                            <?php else: ?>
+                                                <tr>
+                                                    <td colspan="4">No attendance records found for today.</td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <nav class="mt-3">
+                                    <ul class="pagination justify-content-center">
+                                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                            <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                                                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                            </li>
+                                        <?php endfor; ?>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($role !== 'admin'): ?>
                         <div class="col-md-6 mb-4">
                             <div class="dashboard-card p-4 h-100">
-                                <h5 class="mb-4"><i class="fas fa-clock me-2"></i>Today's Status</h5>
-
+                                <h5 class="mb-4"><i class="fas fa-clock me-2"></i><?= ($role === 'admin') ? "Attendance Overview" : "Today's Status" ?></h5>
                                 <?php if (!$attendance): ?>
                                     <p class="text-muted mb-4">You haven't started working today</p>
                                     <form method="post" action="action.php">
@@ -318,7 +459,10 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                                 <?php endif; ?>
                             </div>
                         </div>
+                    <?php endif; ?>
 
+                    <?php if ($role == 'admin'): ?>
+                    <?php else: ?>
                         <div class="col-md-6">
                             <div class="dashboard-card p-4 h-100">
                                 <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Recent Activity</h5>
@@ -352,10 +496,11 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-        <?php endif; ?>
+        </div>
+
     </div>
 
     <!-- Chatbot Widget -->
@@ -383,7 +528,7 @@ $total_break_hours = gmdate("H:i", $total_breaks);
     </div> -->
 
     <!-- JavaScript -->
-    <script src="../assets/js/chatbot.js"></script>
+    <!-- <script src="../assets/js/chatbot.js"></script> -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>

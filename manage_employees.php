@@ -69,42 +69,9 @@ if (isset($_GET['edit'])) {
 
 
         <div class="container py-3">
+            <h2 class="mb-4">Manage Employees</h2>
             <div class="row">
-                <div class="col-md-12">
-                    <h2 class="mb-4">Manage Employees</h2>
-
-                    <!-- Employee Form -->
-                    <div class="card mb-4">
-                        <div class="card-header"><?= $edit_employee ? 'Edit' : 'Add' ?> Employee</div>
-                        <div class="card-body">
-                            <form method="POST">
-                                <input type="hidden" name="id" value="<?= $edit_employee['id'] ?? '' ?>">
-                                <div class="mb-3">
-                                    <label>Username</label>
-                                    <input type="text" name="username" class="form-control" required value="<?= $edit_employee['username'] ?? '' ?>">
-                                </div>
-                                <div class="mb-3">
-                                    <label>Email</label>
-                                    <input type="email" name="email" class="form-control" required value="<?= $edit_employee['email'] ?? '' ?>">
-                                </div>
-                                <div class="mb-3">
-                                    <label>Department</label>
-                                    <input type="text" name="department" class="form-control" value="<?= $edit_employee['department'] ?? '' ?>">
-                                </div>
-                                <div class="mb-3">
-                                    <label>Role</label>
-                                    <select name="role" class="form-select" required>
-                                        <option value="employee" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'employee') ? 'selected' : '' ?>>Employee</option>
-                                        <option value="admin" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'admin') ? 'selected' : '' ?>>Admin</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-success"><?= $edit_employee ? 'Update' : 'Add' ?></button>
-                                <?php if ($edit_employee): ?>
-                                    <a href="manage_employees.php" class="btn btn-secondary ms-2">Cancel</a>
-                                <?php endif; ?>
-                            </form>
-                        </div>
-                    </div>
+                <div class="col-md-9">
 
                     <!-- Employee Table -->
                     <div class="card">
@@ -139,6 +106,43 @@ if (isset($_GET['edit'])) {
                             </table>
                         </div>
                     </div>
+                </div>
+
+                <div class="col-md-3">
+                    <!-- Employee Form -->
+                    <div class="card mb-4">
+                        <div class="card-header"><?= $edit_employee ? 'Edit' : 'Add' ?> Employee</div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="id" value="<?= $edit_employee['id'] ?? '' ?>">
+                                <div class="mb-3">
+                                    <label>Username</label>
+                                    <input type="text" name="username" class="form-control" required value="<?= $edit_employee['username'] ?? '' ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <label>Email</label>
+                                    <input type="email" name="email" class="form-control" required value="<?= $edit_employee['email'] ?? '' ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <label>Department</label>
+                                    <input type="text" name="department" class="form-control" value="<?= $edit_employee['department'] ?? '' ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <label>Role</label>
+                                    <select name="role" class="form-select" required>
+                                        <option value="employee" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'employee') ? 'selected' : '' ?>>Employee</option>
+                                        <option value="admin" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'admin') ? 'selected' : '' ?>>Admin</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success"><?= $edit_employee ? 'Update' : 'Add' ?></button>
+                                <?php if ($edit_employee): ?>
+                                    <a href="manage_employees.php" class="btn btn-secondary ms-2">Cancel</a>
+                                <?php endif; ?>
+                            </form>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>

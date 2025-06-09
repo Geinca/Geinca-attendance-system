@@ -74,76 +74,99 @@ if (isset($_GET['edit'])) {
                 <div class="col-md-9">
 
                     <!-- Employee Table -->
-                    <div class="card">
-                        <div class="card-header">Employee List</div>
+                    <div class="card shadow-lg border-0 rounded-4">
+                        <div class="card-header bg-gradient text-white fw-semibold" style="background: linear-gradient(to right, #0062E6, #33AEFF);">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Employee List</h5>
+                        </div>
                         <div class="card-body p-0">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Department</th>
-                                        <th>Role</th>
-                                        <th style="width: 140px;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php while ($row = $result->fetch_assoc()): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light text-center">
                                         <tr>
-                                            <td><?= $row['id'] ?></td>
-                                            <td><?= htmlspecialchars($row['username']) ?></td>
-                                            <td><?= htmlspecialchars($row['email']) ?></td>
-                                            <td><?= htmlspecialchars($row['department']) ?></td>
-                                            <td><?= ucfirst($row['role']) ?></td>
-                                            <td>
-                                                <a href="manage_employees.php?edit=<?= $row['id'] ?>" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="manage_employees.php?delete=<?= $row['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this employee?')">Delete</a>
-                                            </td>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Username</th>
+                                            <th scope="col">Email</th>
+                                            <th scope="col">Department</th>
+                                            <th scope="col">Role</th>
+                                            <th scope="col">Actions</th>
                                         </tr>
-                                    <?php endwhile ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody class="text-center">
+                                        <?php while ($row = $result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td class="text-muted"><?= $row['id'] ?></td>
+                                                <td class="fw-semibold"><?= htmlspecialchars($row['username']) ?></td>
+                                                <td><?= htmlspecialchars($row['email']) ?></td>
+                                                <td><span class="badge bg-info text-dark"><?= htmlspecialchars($row['department']) ?></span></td>
+                                                <td>
+                                                    <span class="badge <?= $row['role'] === 'admin' ? 'bg-danger' : 'bg-secondary' ?>">
+                                                        <?= ucfirst($row['role']) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="manage_employees.php?edit=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary me-1">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="manage_employees.php?delete=<?= $row['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this employee?')">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <!-- Employee Form -->
-                    <div class="card mb-4">
-                        <div class="card-header"><?= $edit_employee ? 'Edit' : 'Add' ?> Employee</div>
+                    <div class="card shadow-lg border-0 rounded-4 mb-4">
+                        <div class="card-header text-white fw-semibold" style="background: linear-gradient(to right, #0f2027, #203a43, #2c5364);">
+                            <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i><?= $edit_employee ? 'Edit' : 'Add' ?> Employee</h5>
+                        </div>
                         <div class="card-body">
                             <form method="POST">
                                 <input type="hidden" name="id" value="<?= $edit_employee['id'] ?? '' ?>">
-                                <div class="mb-3">
-                                    <label>Username</label>
-                                    <input type="text" name="username" class="form-control" required value="<?= $edit_employee['username'] ?? '' ?>">
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="username" class="form-control" id="username" placeholder="Username" required value="<?= $edit_employee['username'] ?? '' ?>">
+                                    <label for="username">Username</label>
                                 </div>
-                                <div class="mb-3">
-                                    <label>Email</label>
-                                    <input type="email" name="email" class="form-control" required value="<?= $edit_employee['email'] ?? '' ?>">
+
+                                <div class="form-floating mb-3">
+                                    <input type="email" name="email" class="form-control" id="email" placeholder="Email" required value="<?= $edit_employee['email'] ?? '' ?>">
+                                    <label for="email">Email</label>
                                 </div>
-                                <div class="mb-3">
-                                    <label>Department</label>
-                                    <input type="text" name="department" class="form-control" value="<?= $edit_employee['department'] ?? '' ?>">
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="department" class="form-control" id="department" placeholder="Department" value="<?= $edit_employee['department'] ?? '' ?>">
+                                    <label for="department">Department</label>
                                 </div>
-                                <div class="mb-3">
-                                    <label>Role</label>
-                                    <select name="role" class="form-select" required>
+
+                                <div class="form-floating mb-4">
+                                    <select name="role" class="form-select" id="role" required>
                                         <option value="employee" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'employee') ? 'selected' : '' ?>>Employee</option>
                                         <option value="admin" <?= (isset($edit_employee['role']) && $edit_employee['role'] == 'admin') ? 'selected' : '' ?>>Admin</option>
                                     </select>
+                                    <label for="role">Role</label>
                                 </div>
-                                <button type="submit" class="btn btn-success"><?= $edit_employee ? 'Update' : 'Add' ?></button>
+
+                                <button type="submit" class="btn btn-gradient-success px-4">
+                                    <i class="fas fa-check-circle me-1"></i><?= $edit_employee ? 'Update' : 'Add' ?>
+                                </button>
+
                                 <?php if ($edit_employee): ?>
-                                    <a href="manage_employees.php" class="btn btn-secondary ms-2">Cancel</a>
+                                    <a href="manage_employees.php" class="btn btn-outline-secondary ms-2 px-4">
+                                        <i class="fas fa-times-circle me-1"></i>Cancel
+                                    </a>
                                 <?php endif; ?>
                             </form>
                         </div>
                     </div>
-
-
                 </div>
+                
             </div>
         </div>
     </div>

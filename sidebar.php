@@ -35,6 +35,10 @@ $employee_name = $employee['name'] ?? 'Employee'; //
                 <i class="fa-solid fa-pen-nib"></i>
                 <span>Leave Management</span>
             </a>
+            <a href="salary_management.php" class="nav-link">
+                <i class="fa-solid fa-wallet"></i>
+                <span>Salary Management</span>
+            </a>
             <a href="holiday_management.php" class="nav-link">
                 <i class="fa-solid fa-pen-nib"></i>
                 <span>Holiday Management</span>

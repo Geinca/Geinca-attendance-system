@@ -1,14 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Kolkata');
-session_start();
+include 'db_config.php';
 
-if (!isset($_SESSION['employee_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$conn = new mysqli("localhost", "root", "", "attendance_system");
-$employee_id = $_SESSION['employee_id'];
 $role = $_SESSION['role'];
 $is_admin = ($role === 'admin');
 
@@ -20,62 +13,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 $employee = $result->fetch_assoc();
 
-// Handle form submission
-$success_message = '';
-$error_message = '';
-
-// if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-//     $email = $_POST['email'];
-//     $phone = $_POST['phone'];
-//     $address = $_POST['address'];
-//     $current_password = $_POST['current_password'];
-//     $new_password = $_POST['new_password'];
-//     $confirm_password = $_POST['confirm_password'];
-
-//     // Validate and update profile
-//     if (!empty($email) && !empty($phone)) {
-//         $update_stmt = $conn->prepare("UPDATE employees SET email = ?, phone = ?, address = ? WHERE id = ?");
-//         $update_stmt->bind_param("sssi", $email, $phone, $address, $employee_id);
-
-//         if ($update_stmt->execute()) {
-//             $success_message = "Profile updated successfully!";
-//             // Refresh employee data
-//             $employee['email'] = $email;
-//             $employee['phone'] = $phone;
-//             $employee['address'] = $address;
-//         } else {
-//             $error_message = "Error updating profile: " . $conn->error;
-//         }
-//     }
-
-//     // Handle password change if provided
-//     if (!empty($current_password)) {
-//         // Verify current password
-//         $check_stmt = $conn->prepare("SELECT password FROM employees WHERE id = ?");
-//         $check_stmt->bind_param("i", $employee_id);
-//         $check_stmt->execute();
-//         $check_result = $check_stmt->get_result();
-//         $db_password = $check_result->fetch_assoc()['password'];
-
-//         if (password_verify($current_password, $db_password)) {
-//             if ($new_password === $confirm_password) {
-//                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-//                 $pass_stmt = $conn->prepare("UPDATE employees SET password = ? WHERE id = ?");
-//                 $pass_stmt->bind_param("si", $hashed_password, $employee_id);
-
-//                 if ($pass_stmt->execute()) {
-//                     $success_message = $success_message ? $success_message . " Password updated!" : "Password updated successfully!";
-//                 } else {
-//                     $error_message = $error_message ? $error_message . " Error updating password." : "Error updating password.";
-//                 }
-//             } else {
-//                 $error_message = $error_message ? $error_message . " New passwords don't match." : "New passwords don't match.";
-//             }
-//         } else {
-//             $error_message = $error_message ? $error_message . " Current password is incorrect." : "Current password is incorrect.";
-//         }
-//     }
-// }
 
 function formatDate($date)
 {
@@ -90,78 +27,89 @@ function formatDate($date)
     <title>Employee Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Remix Icon CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
     <!-- style css -->
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- sidebar css -->
     <link rel="stylesheet" href="assets/css/sidebar.css">
     <style>
+        /* General layout spacing */
         .main-content {
-            padding: 20px;
+            padding: 2rem;
+            background-color: #f8f9fa;
         }
 
+        /* Profile card */
         .profile-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 30px;
-            margin-bottom: 20px;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            text-align: center;
         }
 
         .profile-pic {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            object-fit: cover;
-            border: 5px solid rgba(1, 159, 226, 0.2);
-            margin-right: 30px;
+            border: 4px solid #019FE2;
+            margin-bottom: 1rem;
         }
 
         .info-item {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
         }
 
         .info-label {
             font-weight: 600;
-            color: #666;
-            margin-bottom: 5px;
+            color: #6c757d;
+            font-size: 0.85rem;
         }
 
         .info-value {
             font-size: 1.1rem;
+            font-weight: 500;
+            color: #343a40;
         }
 
+        /* Form section */
         .form-section {
-            background-color: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
         }
 
         .section-title {
-            color: var(--primary);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #019FE2;
+            display: flex;
+            align-items: center;
         }
 
+        /* Buttons */
         .btn-save {
-            background-color: var(--primary);
+            background-color: #019FE2;
             color: white;
-            padding: 10px 25px;
             font-weight: 500;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            transition: background-color 0.3s ease;
         }
 
         .btn-save:hover {
-            background-color: #0066cc;
-            color: white;
+            background-color: #017bb3;
+        }
+
+        /* Alerts */
+        .alert {
+            border-radius: 0.75rem;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -173,20 +121,6 @@ function formatDate($date)
     <!-- Main Content -->
     <div class="main-content">
         <div class="container-fluid">
-            <!-- Success/Error Messages -->
-            <?php if ($success_message): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= $success_message ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($error_message): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= $error_message ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            <?php endif; ?>
 
             <div class="row">
                 <div class="col-md-4">

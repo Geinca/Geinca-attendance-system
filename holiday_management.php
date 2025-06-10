@@ -41,6 +41,8 @@ $holidays = $conn->query("SELECT * FROM holidays ORDER BY date ASC");
     <title>Holiday Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Remix Icon CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- custom css -->
     <link rel="stylesheet" href="assets/css/sidebar.css">
 
@@ -65,30 +67,35 @@ $holidays = $conn->query("SELECT * FROM holidays ORDER BY date ASC");
                     <i class="fas fa-calendar-plus me-2"></i>Add New Holiday
                 </div>
                 <div class="card-body">
-                    <form method="POST" class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Holiday Name</label>
-                            <input type="text" name="name" class="form-control shadow-sm" placeholder="e.g. Independence Day" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Date</label>
-                            <input type="date" name="date" class="form-control shadow-sm" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Type</label>
-                            <select name="type" class="form-select shadow-sm" required>
-                                <option value="">Select Type</option>
-                                <option value="Public">Public</option>
-                                <option value="Restricted">Restricted</option>
-                                <option value="Optional">Optional</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 d-grid">
-                            <button type="submit" name="add_holiday" class="btn btn-success shadow">
-                                <i class="fas fa-plus me-1"></i> Add
-                            </button>
+                    <form method="POST">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Add New Holiday</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Holiday Name</label>
+                                    <input type="text" name="holiday_name" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" name="holiday_date" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Type</label>
+                                    <select name="holiday_type" class="form-select" required>
+                                        <option value="national">National Holiday</option>
+                                        <option value="company">Company Holiday</option>
+                                        <option value="religious">Religious Holiday</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button type="submit" name="add_holiday" class="btn btn-primary">Add Holiday</button>
+                            </div>
                         </div>
                     </form>
+
                 </div>
             </div>
 

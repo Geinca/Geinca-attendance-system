@@ -1,14 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['employee_id'])) {
-    header("Location: login.php");
-    exit;
-}
+include 'db_config.php';
 
-$conn = new mysqli("localhost", "root", "", "attendance_system");
-$employee_id = $_SESSION['employee_id'];
+
 $today = date('Y-m-d');
-
 
 function redirect() {
     header("Location: ./dashboard.php");

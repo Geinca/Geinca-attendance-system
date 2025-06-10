@@ -1,15 +1,6 @@
 <?php
 date_default_timezone_set('Asia/Kolkata');
-session_start();
-
-
-if (!isset($_SESSION['employee_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$conn = new mysqli("localhost", "root", "", "attendance_system");
-$employee_id = $_SESSION['employee_id'];
+include 'db_config.php';
 
 // Get role for logged in user
 $stmt = $conn->prepare("SELECT username, role FROM employees WHERE id = ?");
@@ -159,88 +150,109 @@ if ($role === 'admin') {
 }
 
 
-
-
 // Simple version without report type
 $start_date = date('Y-m-d', strtotime('-30 days'));
 $end_date = date('Y-m-d');
 $title = "Last 30 Days Report";
 
-// Fetch attendance data of one employee
-$stmt = $conn->prepare("SELECT date, start_time, break_start_time, break_end_time, stop_time 
-                       FROM attendance 
-                       WHERE employee_id = ? 
-                       AND date BETWEEN ? AND ?
-                       ORDER BY date DESC");
-$stmt->bind_param("iss", $employee_id, $start_date, $end_date);
-$stmt->execute();
-$result = $stmt->get_result();
-$attendance_data = $result->fetch_all(MYSQLI_ASSOC);
 
-// For paginated today's attendance of all non-admins
-$limit = 10; // records per page
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$offset = ($page - 1) * $limit;
-$today = date('Y-m-d');
-$total_stmt = $conn->prepare("
-    SELECT COUNT(*) AS total 
-    FROM attendance a 
-    JOIN employees e ON a.employee_id = e.id 
-    WHERE e.role != 'admin' AND a.date = ?
-");
-$total_stmt->bind_param("s", $today);
-$total_stmt->execute();
-$total_result = $total_stmt->get_result();
-$total_records = $total_result->fetch_assoc()['total'] ?? 0;
-$total_pages = ceil($total_records / $limit);
-$today_attendance_stmt = $conn->prepare("
-    SELECT 
-        a.date, a.start_time, a.stop_time, a.break_start_time, a.break_end_time, 
-        e.username 
-    FROM attendance a
-    JOIN employees e ON a.employee_id = e.id
-    WHERE e.role != 'admin' AND a.date = ?
-    ORDER BY a.start_time DESC
-    LIMIT ? OFFSET ?
-");
-$today_attendance_stmt->bind_param("sii", $today, $limit, $offset);
-$today_attendance_stmt->execute();
-$result_all = $today_attendance_stmt->get_result();
+// Admin View of today's paginated records:
+if ($role === 'admin') {
+    $limit = 10;
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $offset = ($page - 1) * $limit;
+    $today = date('Y-m-d');
+
+    // Count total for pagination
+    $total_stmt = $conn->prepare("
+        SELECT COUNT(*) AS total 
+        FROM attendance a 
+        JOIN employees e ON a.employee_id = e.id 
+        WHERE e.role != 'admin' AND a.date = ?
+    ");
+    $total_stmt->bind_param("s", $today);
+    $total_stmt->execute();
+    $total_result = $total_stmt->get_result();
+    $total_records = $total_result->fetch_assoc()['total'] ?? 0;
+    $total_pages = ceil($total_records / $limit);
+
+    // Fetch today's attendance
+    $today_attendance_stmt = $conn->prepare("
+        SELECT 
+            a.date, a.start_time, a.stop_time, a.break_start_time, a.break_end_time, 
+            e.username 
+        FROM attendance a
+        JOIN employees e ON a.employee_id = e.id
+        WHERE e.role != 'admin' AND a.date = ?
+        ORDER BY a.start_time DESC
+        LIMIT ? OFFSET ?
+    ");
+    $today_attendance_stmt->bind_param("sii", $today, $limit, $offset);
+    $today_attendance_stmt->execute();
+    $result_all = $today_attendance_stmt->get_result();
+}
+
+// Employee View (30 days history):
+if ($role !== 'admin') {
+    $start_date = date('Y-m-d', strtotime('-30 days'));
+    $end_date = date('Y-m-d');
+
+    $stmt = $conn->prepare("
+        SELECT date, start_time, break_start_time, break_end_time, stop_time 
+        FROM attendance 
+        WHERE employee_id = ? 
+        AND date BETWEEN ? AND ?
+        ORDER BY date DESC
+    ");
+    $stmt->bind_param("iss", $employee_id, $start_date, $end_date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $attendance_data = $result->fetch_all(MYSQLI_ASSOC);
+}
 
 
 
 // Calculate summary statistics
+// Initialize summary variables
 $total_days = 0;
 $present_days = 0;
 $total_hours = 0;
 $total_breaks = 0;
 
-foreach ($attendance_data as $record) {
-    $total_days++;
-    if ($record['start_time']) $present_days++;
+// Only run this block for non-admins (individual employee view)
+if ($role !== 'admin' && !empty($attendance_data)) {
+    foreach ($attendance_data as $record) {
+        $total_days++;
 
-    if ($record['start_time'] && $record['stop_time']) {
-        $start = strtotime($record['start_time']);
-        $stop = strtotime($record['stop_time']);
-        $work_seconds = $stop - $start;
+        if (!empty($record['start_time'])) {
+            $present_days++;
 
-        // Subtract break time if available
-        if ($record['break_start_time'] && $record['break_end_time']) {
-            $break_start = strtotime($record['break_start_time']);
-            $break_end = strtotime($record['break_end_time']);
-            $break_seconds = $break_end - $break_start;
-            $work_seconds -= $break_seconds;
-            $total_breaks += $break_seconds;
+            if (!empty($record['stop_time'])) {
+                $start = strtotime($record['start_time']);
+                $stop = strtotime($record['stop_time']);
+                $work_seconds = $stop - $start;
+
+                // Subtract break duration if both times are valid
+                if (!empty($record['break_start_time']) && !empty($record['break_end_time'])) {
+                    $break_start = strtotime($record['break_start_time']);
+                    $break_end = strtotime($record['break_end_time']);
+                    $break_seconds = max(0, $break_end - $break_start);
+                    $work_seconds -= $break_seconds;
+                    $total_breaks += $break_seconds;
+                }
+
+                $total_hours += max(0, $work_seconds);
+            }
         }
-
-        $total_hours += $work_seconds;
     }
+
+    // Calculate summary stats
+    $attendance_percentage = $total_days > 0 ? round(($present_days / $total_days) * 100, 2) : 0;
+    $avg_hours_per_day     = $present_days > 0 ? gmdate("H:i", $total_hours / $present_days) : '00:00';
+    $total_work_hours      = gmdate("H:i", $total_hours);
+    $total_break_hours     = gmdate("H:i", $total_breaks);
 }
 
-$attendance_percentage = $total_days > 0 ? round(($present_days / $total_days) * 100, 2) : 0;
-$avg_hours_per_day = $present_days > 0 ? gmdate("H:i", $total_hours / $present_days) : '00:00';
-$total_work_hours = gmdate("H:i", $total_hours);
-$total_break_hours = gmdate("H:i", $total_breaks);
 ?>
 
 <!DOCTYPE html>
@@ -250,6 +262,9 @@ $total_break_hours = gmdate("H:i", $total_breaks);
     <title>Employee Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Remix Icon CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/sidebar.css">
@@ -348,11 +363,15 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                             <div class="dashboard-card p-4 h-100">
                                 <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Today's Activity (All Employees)</h5>
                                 <div class="table-responsive">
-                                    <table class="table table-custom table-hover mb-0">
+                                    <table class="table table-hover table-bordered align-middle text-center">
                                         <thead>
                                             <tr>
                                                 <th>Employee</th>
                                                 <th>Date</th>
+                                                <th>Login</th>
+                                                <th>Break In</th>
+                                                <th>Break Out</th>
+                                                <th>Logout</th>
                                                 <th>Status</th>
                                                 <th>Total Time</th>
                                             </tr>
@@ -361,30 +380,35 @@ $total_break_hours = gmdate("H:i", $total_breaks);
                                             <?php if ($result_all->num_rows > 0): ?>
                                                 <?php while ($row = $result_all->fetch_assoc()): ?>
                                                     <tr>
-                                                        <td><?= htmlspecialchars($row['username']) ?></td>
+                                                        <td><strong><?= htmlspecialchars($row['username']) ?></strong></td>
                                                         <td><?= htmlspecialchars($row['date']) ?></td>
+                                                        <td><span class="text-primary"><?= formatTime($row['start_time']) ?></span></td>
+                                                        <td><span class="text-warning"><?= formatTime($row['break_start_time']) ?></span></td>
+                                                        <td><span class="text-success"><?= formatTime($row['break_end_time']) ?></span></td>
+                                                        <td><span class="text-danger"><?= formatTime($row['stop_time']) ?></span></td>
                                                         <td>
                                                             <?php if ($row['stop_time']): ?>
-                                                                <span class="badge bg-danger bg-opacity-10 text-danger">Completed</span>
+                                                                <span class="badge bg-danger">Completed</span>
                                                             <?php elseif ($row['break_start_time'] && (!$row['break_end_time'] || strtotime($row['break_end_time']) < strtotime($row['break_start_time']))): ?>
-                                                                <span class="badge bg-warning bg-opacity-10 text-warning">On Break</span>
+                                                                <span class="badge bg-warning text-dark">On Break</span>
                                                             <?php elseif ($row['start_time']): ?>
-                                                                <span class="badge bg-success bg-opacity-10 text-success">Working</span>
+                                                                <span class="badge bg-success">Working</span>
                                                             <?php else: ?>
-                                                                <span class="badge bg-secondary bg-opacity-10 text-muted">No Activity</span>
+                                                                <span class="badge bg-secondary">No Activity</span>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td><?= getTotalWorkTime($row['start_time'], $row['stop_time'], $row['break_start_time'], $row['break_end_time']) ?></td>
+                                                        <td><span class="text-dark fw-semibold"><?= getTotalWorkTime($row['start_time'], $row['stop_time'], $row['break_start_time'], $row['break_end_time']) ?></span></td>
                                                     </tr>
                                                 <?php endwhile; ?>
                                             <?php else: ?>
                                                 <tr>
-                                                    <td colspan="4">No attendance records found for today.</td>
+                                                    <td colspan="8" class="text-muted">No attendance records found for today.</td>
                                                 </tr>
                                             <?php endif; ?>
                                         </tbody>
                                     </table>
                                 </div>
+
 
                                 <!-- Pagination -->
                                 <nav class="mt-3">
